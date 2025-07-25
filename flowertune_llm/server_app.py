@@ -14,7 +14,7 @@ from omegaconf import DictConfig
 from flowertune_llm.models import get_model, get_parameters, set_parameters
 from flowertune_llm.dataset import replace_keys
 
-from transformers import AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 
 # Get function that will be executed by the strategy's evaluate() method
 # Here we use it to save global model checkpoints

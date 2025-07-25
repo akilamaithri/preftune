@@ -53,9 +53,9 @@ def load_data(partition_id: int, num_partitions: int, dataset_name: str):
 
         print(train_data.column_names)
         
-        train_data = train_data.rename_column("output", "response")  # ✅ Optional, if needed
+        train_data = train_data.rename_column("output", "response")  
         partitioner = IidPartitioner(num_partitions=num_partitions)
-        FDS = partitioner.partition(train_data)  # ✅ FIXED
+        FDS = partitioner(train_data)
 
     return FDS.load_partition(partition_id)
 

@@ -13,7 +13,7 @@ from peft import (
     set_peft_model_state_dict,
 )
 from peft.utils import prepare_model_for_kbit_training
-from transformers import AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 
 from flwr.common.typing import NDArrays
 

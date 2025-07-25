@@ -15,11 +15,18 @@
 #PBS -m abe
 
 # Load your module and activate your environment
+module load cuda/12.0.0
 module load python3/3.10.4
-source /scratch/wd04/sm0074/preftune_env_py310/bin/activate
+source /scratch/wd04/sm0074/preftune_flower/bin/activate
+
+# Use bitsandbytes
+export BITSANDBYTES_FORCE_CUDA=1
+export PYTHONPATH=/scratch/wd04/sm0074/bitsandbytes:$PYTHONPATH
 
 # Move to your project directory
 cd /scratch/wd04/sm0074/preftune
+
+python -c "import bitsandbytes as bnb; print('✅ Loaded:', bnb.__file__)"
 
 # Run Flower Tune LLM
 flwr run . --run-config "model.name='openlm-research/open_llama_3b_v2' model.quantization=8"
