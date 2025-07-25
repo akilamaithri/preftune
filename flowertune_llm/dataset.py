@@ -1,11 +1,16 @@
+import os
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
+
 from transformers import AutoTokenizer
 from trl import DataCollatorForCompletionOnlyLM
 
 from flwr_datasets.partitioner import IidPartitioner
-from flwr_datasets import FederatedDataset
+from datasets import load_from_disk
+
+LOCAL_DATASET_PATH = "/scratch/wd04/sm0074/preftune/datasets/alpaca_gpt4_local"
 
 FDS = None  # Cache FederatedDataset
-
 
 def formatting_prompts_func(example):
     output_texts = []
@@ -19,8 +24,14 @@ def formatting_prompts_func(example):
 
 def get_tokenizer_and_data_collator_and_propt_formatting(model_name: str):
     # From: https://huggingface.co/docs/trl/en/sft_trainer
+    # tokenizer = AutoTokenizer.from_pretrained(
+    #     model_name, use_fast=True, padding_side="right"
+    # )
     tokenizer = AutoTokenizer.from_pretrained(
-        model_name, use_fast=True, padding_side="right"
+        model_name,
+        use_fast=True,
+        padding_side="right",
+        local_files_only=True
     )
     tokenizer.pad_token = tokenizer.eos_token
     response_template_with_context = "\n### Response:"  # alpaca response tag
@@ -35,20 +46,18 @@ def get_tokenizer_and_data_collator_and_propt_formatting(model_name: str):
 
 
 def load_data(partition_id: int, num_partitions: int, dataset_name: str):
-    """Load partition data."""
-    # Only initialize `FederatedDataset` once
     global FDS
     if FDS is None:
+        full_dataset = load_from_disk(LOCAL_DATASET_PATH)
+        train_data = full_dataset["train"]
+
+        print(train_data.column_names)
+        
+        train_data = train_data.rename_column("output", "response")  # ✅ Optional, if needed
         partitioner = IidPartitioner(num_partitions=num_partitions)
-        FDS = FederatedDataset(
-            dataset=dataset_name,
-            partitioners={"train": partitioner},
-        )
-    client_trainset = FDS.load_partition(partition_id, "train")
-    client_trainset = client_trainset.rename_column("output", "response")
+        FDS = partitioner.partition(train_data)  # ✅ FIXED
 
-    return client_trainset
-
+    return FDS.load_partition(partition_id)
 
 def replace_keys(input_dict, match="-", target="_"):
     """Recursively replace match string with target string in dictionary keys."""

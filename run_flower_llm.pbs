@@ -1,0 +1,25 @@
+#!/bin/bash
+#PBS -N flower_llm
+#PBS -l walltime=04:00:00
+#PBS -q dgxa100
+#PBS -l mem=80GB
+#PBS -l ncpus=16
+#PBS -l ngpus=1
+#PBS -l jobfs=20GB
+#PBS -l storage=scratch/wd04 
+#PBS -l wd
+#PBS -P wd04
+#PBS -o flower_llm.out
+#PBS -e flower_llm.err
+#PBS -M s4160163@student.rmit.edu.au
+#PBS -m abe
+
+# Load your module and activate your environment
+module load python3/3.10.4
+source /scratch/wd04/sm0074/preftune_env_py310/bin/activate
+
+# Move to your project directory
+cd /scratch/wd04/sm0074/preftune
+
+# Run Flower Tune LLM
+flwr run . --run-config "model.name='openlm-research/open_llama_3b_v2' model.quantization=8"

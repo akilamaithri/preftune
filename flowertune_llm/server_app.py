@@ -1,6 +1,8 @@
 """flowertune-llm: A Flower / FlowerTune app."""
 
 import os
+import torch
+
 from datetime import datetime
 
 from flwr.common import Context, ndarrays_to_parameters
@@ -12,6 +14,7 @@ from omegaconf import DictConfig
 from flowertune_llm.models import get_model, get_parameters, set_parameters
 from flowertune_llm.dataset import replace_keys
 
+from transformers import AutoModelForCausalLM
 
 # Get function that will be executed by the strategy's evaluate() method
 # Here we use it to save global model checkpoints
@@ -24,7 +27,7 @@ def get_evaluate_fn(model_cfg, save_every_round, total_round, save_path):
             server_round == total_round or server_round % save_every_round == 0
         ):
             # Init model
-            model = get_model(model_cfg)
+            model = torch.compile(get_model(model_cfg), mode="reduce-overhead")
             set_parameters(model, parameters)
 
             model.save_pretrained(f"{save_path}/peft_{server_round}")
@@ -70,7 +73,7 @@ def server_fn(context: Context):
     cfg = DictConfig(replace_keys(unflatten_dict(context.run_config)))
 
     # Get initial model weights
-    init_model = get_model(cfg.model)
+    init_model = torch.compile(get_model(cfg.model), mode="reduce-overhead")
     init_model_parameters = get_parameters(init_model)
     init_model_parameters = ndarrays_to_parameters(init_model_parameters)
 

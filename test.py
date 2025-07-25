@@ -1,5 +1,8 @@
 # This python file is adapted from https://github.com/lm-sys/FastChat/blob/main/fastchat/llm_judge/gen_model_answer.py
 
+import os
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 import argparse
 
 import torch
@@ -14,11 +17,18 @@ parser.add_argument("--template", type=str, default="vicuna_v1.1")
 args = parser.parse_args()
 
 # Load model and tokenizer
+# model = AutoPeftModelForCausalLM.from_pretrained(
+#     args.peft_path, torch_dtype=torch.float16
+# ).to("cuda")
+
 model = AutoPeftModelForCausalLM.from_pretrained(
-    args.peft_path, torch_dtype=torch.float16
+    args.peft_path,
+    torch_dtype=torch.float16,
+    local_files_only=True,
 ).to("cuda")
+
 base_model = model.peft_config["default"].base_model_name_or_path
-tokenizer = AutoTokenizer.from_pretrained(base_model)
+tokenizer = AutoTokenizer.from_pretrained(base_model, local_files_only=True)
 
 # Generate answers
 temperature = 0.7
